@@ -21,6 +21,25 @@ Surý's php7.4 get no update. This repo rebuilds the unchanged jammy source pack
 | Ubuntu 22.04 / 24.04, Debian 11 / 12 | not this — Surý ships `-31` officially: `apt update && apt install --only-upgrade 'php7.4*'` |
 | Ubuntu 18.04, arm64 | not built |
 
+## Packages
+
+All 38 binary packages built from the `php7.4` source, version `1:7.4.33-31+ubuntu20.04.1+deb.sury.org+1~local1`:
+
+| Group | Packages |
+|---|---|
+| Core | `php7.4` (metapackage), `php7.4-common`, `php7.4-cli`, `php7.4-json`, `php7.4-opcache`, `php7.4-readline`, `php7.4-dev` |
+| SAPI | `php7.4-fpm`, `libapache2-mod-php7.4`, `php7.4-cgi`, `php7.4-litespeed`, `php7.4-phpdbg`, `libphp7.4-embed` |
+| Databases | `php7.4-mysql`, `php7.4-pgsql`, `php7.4-sqlite3`, `php7.4-odbc`, `php7.4-interbase`, `php7.4-sybase`, `php7.4-dba` |
+| Text, XML | `php7.4-mbstring`, `php7.4-intl`, `php7.4-xml`, `php7.4-xsl`, `php7.4-xmlrpc`, `php7.4-soap`, `php7.4-tidy`, `php7.4-enchant`, `php7.4-pspell` |
+| Other | `php7.4-curl`, `php7.4-gd`, `php7.4-zip`, `php7.4-bz2`, `php7.4-bcmath`, `php7.4-gmp`, `php7.4-imap`, `php7.4-ldap`, `php7.4-snmp` |
+
+`php7.4-common` also carries the built-in extensions (ctype, exif, fileinfo, ftp, iconv, pdo, mysqlnd, phar,
+posix, sockets, tokenizer, …).
+
+**Not included** — extensions built from their own source packages: `php7.4-redis`, `-imagick`, `-memcached`,
+`-apcu`, `-igbinary`, `-xdebug`, `-mongodb`, `-amqp`, etc. They don't contain the vulnerable code, need no
+update and keep working with this build (same PHP API `20190902`).
+
 ## Install
 
 Download `php74-31-focal-amd64.tgz` from [Releases](../../releases), then as root:
@@ -85,6 +104,11 @@ build container only — `debian/rules` needs `/usr/lib/php/php-common.mk`.
 для 22.04/24.04 — focal из `ppa:ondrej/php` убран в 2025-м. Здесь — тот же исходник, собранный под focal.
 
 > ⚠️ **Без гарантий**, не подписано Surý. PHP 7.4 — EOL: это временная мера, планируйте переезд.
+
+**Пакеты:** все 38 бинарных пакетов исходника `php7.4` — ядро, SAPI (`fpm`, `libapache2-mod-php7.4`, `cgi`,
+`litespeed`, `phpdbg`, `embed`) и модули (`mysql`, `pgsql`, `sqlite3`, `curl`, `gd`, `intl`, `mbstring`, `xml`,
+`zip`, `soap`, `imap`, `ldap` и др.), полный список — в таблице [Packages](#packages). Расширения из отдельных
+пакетов (`redis`, `imagick`, `memcached`, `apcu`, `xdebug`…) не входят: обновлять их не нужно, они продолжат работать.
 
 **Подходит:** Ubuntu 20.04 amd64 с php7.4 из репозитория Surý. Для штатного php7.4 Ubuntu — Ubuntu Pro
 (USN-8948-2). Для 22.04 / 24.04 / Debian — просто `apt upgrade` из репозитория Surý.
