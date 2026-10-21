@@ -62,6 +62,35 @@ bash install.sh
 
 Rollback: `bash rollback.sh /root/php74-backup-<date>`.
 
+## Verify
+
+**On the server** (read-only, safe on production):
+
+```bash
+sudo bash check-installed.sh
+# OK   php7.4-fpm package 1:7.4.33-31+ubuntu20.04.1+deb.sury.org+1~local1
+# OK   /usr/sbin/php-fpm7.4 sha256 matches this build
+# OK   running php-fpm processes use the new binary
+# RESULT: patched build is installed and running
+```
+
+It checks the package version, the sha256 of `/usr/sbin/php-fpm7.4` (the Zend engine and multipart parser are
+linked into it) and that no php-fpm / apache2 process still runs the old, deleted binary.
+
+**That the fix is in the build** (throwaway container, *not* on a server — it installs packages):
+
+```bash
+cd php74-31-focal-amd64
+docker run --rm --platform linux/amd64 -v "$PWD/debs:/o:ro" -v "$PWD/verify-fix.sh:/t.sh:ro" ubuntu:20.04 bash /t.sh ours
+# SESSION: []                         <- patched
+docker run --rm --platform linux/amd64 -v "$PWD/verify-fix.sh:/t.sh:ro" ubuntu:20.04 bash /t.sh stock
+# SESSION: ["upload_progress_mark"]   <- unpatched Ubuntu 7.4.3, for comparison
+```
+
+The patch makes session upload progress a no-op (`ext/session/session.c`: `if (!PS(rfc1867_enabled) || true)`),
+so with `session.upload_progress.enabled=1` an unpatched PHP writes `upload_progress_*` into the session and the
+patched one doesn't. This is a marker of the patch, not an exploit test.
+
 Extensions from separate source packages (`php7.4-redis`, `-imagick`, `-memcached`, …) are untouched and keep
 working — the PHP API (`20190902`) is the same.
 
@@ -75,16 +104,8 @@ Also recommended (official advice, keep it after patching):
   (`build/smoke.sh`).
 - `install.sh` + `rollback.sh` in a container; one production server upgraded from `-16` to `-31` (~40 FPM
   pools, sites OK).
-- Marker test (`build/verify-fix.sh`): the patch makes session upload progress a no-op. With
-  `session.upload_progress.enabled=1` stock focal `7.4.3-4ubuntu2.29` (unpatched) writes `upload_progress_*` into
-  the session, this build writes nothing:
-  ```bash
-  docker run --rm --platform linux/amd64 -v "$PWD/debs:/o:ro" -v "$PWD/build/verify-fix.sh:/t.sh:ro" ubuntu:20.04 bash /t.sh ours
-  # SESSION: []            <- patched   (stock gives: SESSION: ["upload_progress_mark"])
-  ```
-- On your server, confirm the running binary is this build: `sha256sum /usr/sbin/php-fpm7.4` should be
-  `9c0f06f2e73ab11b43e74c0720261aaff202003dd20615e793593a42495f1067`, and `ls -l /proc/$(systemctl show -p MainPID
-  --value php7.4-fpm)/exe` must not say `(deleted)` (i.e. FPM was restarted).
+- Marker test `verify-fix.sh`: stock 7.4.3 → `["upload_progress_mark"]`, this build → `[]` (see [Verify](#verify)).
+- `check-installed.sh` on the production server: all OK.
 - **Not** tested against an exploit.
 
 ## Build it yourself
@@ -129,6 +150,9 @@ build container only — `debian/rules` needs `/usr/lib/php/php-common.mk`.
 Скрипт проверит систему, обновит только уже установленные пакеты php7.4-\* (и остановится, если какому-то
 нет замены), сделает бэкап (`/root/php74-backup-<дата>`), сохранит ваши конфиги и перезапустит FPM.
 Откат: `bash rollback.sh /root/php74-backup-<дата>`.
+
+**Проверка** на сервере (только чтение): `sudo bash check-installed.sh` — версия пакета, sha256 бинарника,
+что FPM перезапущен. Что фикс есть в сборке — `verify-fix.sh` в контейнере, см. [Verify](#verify).
 
 Рекомендуется также `session.upload_progress.enabled = 0` в php.ini.
 

@@ -1,7 +1,9 @@
 #!/bin/bash
 # Marker test for the php2shell fix: the patch disables session upload progress unconditionally.
 # Unpatched PHP writes upload_progress_* into the session; patched does not.
-# Usage (in a throwaway container, see README):  bash verify-fix.sh ours|stock
+# Usage (NOT on a server — installs packages; run in a throwaway container from the release folder):
+#   docker run --rm --platform linux/amd64 -v "$PWD/debs:/o:ro" -v "$PWD/verify-fix.sh:/t.sh:ro" ubuntu:20.04 bash /t.sh ours
+#   ('stock' instead of 'ours' runs the same test on unpatched Ubuntu php7.4 7.4.3 for comparison)
 set -e; export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 if [ "$1" = ours ]; then cd /o; V=7.4.33-31+ubuntu20.04.1+deb.sury.org+1~local1
