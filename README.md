@@ -75,6 +75,16 @@ Also recommended (official advice, keep it after patching):
   (`build/smoke.sh`).
 - `install.sh` + `rollback.sh` in a container; one production server upgraded from `-16` to `-31` (~40 FPM
   pools, sites OK).
+- Marker test (`build/verify-fix.sh`): the patch makes session upload progress a no-op. With
+  `session.upload_progress.enabled=1` stock focal `7.4.3-4ubuntu2.29` (unpatched) writes `upload_progress_*` into
+  the session, this build writes nothing:
+  ```bash
+  docker run --rm --platform linux/amd64 -v "$PWD/debs:/o:ro" -v "$PWD/build/verify-fix.sh:/t.sh:ro" ubuntu:20.04 bash /t.sh ours
+  # SESSION: []            <- patched   (stock gives: SESSION: ["upload_progress_mark"])
+  ```
+- On your server, confirm the running binary is this build: `sha256sum /usr/sbin/php-fpm7.4` should be
+  `9c0f06f2e73ab11b43e74c0720261aaff202003dd20615e793593a42495f1067`, and `ls -l /proc/$(systemctl show -p MainPID
+  --value php7.4-fpm)/exe` must not say `(deleted)` (i.e. FPM was restarted).
 - **Not** tested against an exploit.
 
 ## Build it yourself
